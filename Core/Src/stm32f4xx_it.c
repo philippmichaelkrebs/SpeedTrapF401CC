@@ -62,6 +62,8 @@ extern void (*ptr_sptr_entry_lane_2)(uint16_t capture);
 extern void (*ptr_sptr_exit_lane_2)(uint16_t capture);
 extern void (*ptr_sptr_tim_overflow)(void);
 
+extern void (*ptr_dma_man_tc)(void);
+extern void (*ptr_dma_man_ht)(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -224,6 +226,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 	if (LL_TIM_IsActiveFlag_UPDATE(TIM10)){
 		LL_TIM_ClearFlag_UPDATE(TIM10);
+		LL_GPIO_TogglePin(OUTPUT_HUNDREDTH_TEST_GPIO_Port, OUTPUT_HUNDREDTH_TEST_Pin);
 		hundredth++;
 		tenth_counter++;
 		if (10 <= tenth_counter){
@@ -278,6 +281,29 @@ void TIM3_IRQHandler(void)
 			ptr_sptr_tim_overflow();
 	}
   /* USER CODE END TIM3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream7 global interrupt.
+  */
+void DMA1_Stream7_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream7_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream7_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream7_IRQn 1 */
+	if (LL_DMA_IsActiveFlag_HT7(DMA1)){
+			LL_DMA_ClearFlag_HT7(DMA1);
+			if (ptr_dma_man_ht) { // check if assigned
+				ptr_dma_man_ht();
+			}
+		} else if (LL_DMA_IsActiveFlag_TC7(DMA1)){
+			LL_DMA_ClearFlag_TC7(DMA1);
+			if (ptr_dma_man_tc) { // check if assigned
+				ptr_dma_man_tc();
+			}
+		}
+  /* USER CODE END DMA1_Stream7_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
