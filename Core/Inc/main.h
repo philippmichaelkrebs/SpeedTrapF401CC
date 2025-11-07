@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_ll_adc.h"
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_rcc.h"
 #include "stm32f4xx_ll_bus.h"
@@ -36,6 +37,7 @@ extern "C" {
 #include "stm32f4xx_ll_utils.h"
 #include "stm32f4xx_ll_pwr.h"
 #include "stm32f4xx_ll_tim.h"
+#include "stm32f4xx_ll_usart.h"
 #include "stm32f4xx_ll_gpio.h"
 
 #if defined(USE_FULL_ASSERT)
@@ -70,10 +72,32 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_ONBOARD_Pin LL_GPIO_PIN_13
-#define LED_ONBOARD_GPIO_Port GPIOC
-#define OUTPUT_HUNDREDTH_TEST_Pin LL_GPIO_PIN_12
-#define OUTPUT_HUNDREDTH_TEST_GPIO_Port GPIOB
+#define TRACK_TICKS_BI_LED_Pin LL_GPIO_PIN_13
+#define TRACK_TICKS_BI_LED_GPIO_Port GPIOC
+#define WS2812B_CHAN1_Pin LL_GPIO_PIN_0
+#define WS2812B_CHAN1_GPIO_Port GPIOA
+#define WS2812B_CHAN2_Pin LL_GPIO_PIN_1
+#define WS2812B_CHAN2_GPIO_Port GPIOA
+#define ST_TRIGGER_Pin LL_GPIO_PIN_5
+#define ST_TRIGGER_GPIO_Port GPIOA
+#define ST_DRIVER_ID_6_Pin LL_GPIO_PIN_2
+#define ST_DRIVER_ID_6_GPIO_Port GPIOB
+#define ST_DRIVER_ID_5_Pin LL_GPIO_PIN_10
+#define ST_DRIVER_ID_5_GPIO_Port GPIOB
+#define ST_DRIVER_ID_4_Pin LL_GPIO_PIN_12
+#define ST_DRIVER_ID_4_GPIO_Port GPIOB
+#define ST_DRIVER_ID_3_Pin LL_GPIO_PIN_13
+#define ST_DRIVER_ID_3_GPIO_Port GPIOB
+#define ST_DRIVER_ID_2_Pin LL_GPIO_PIN_14
+#define ST_DRIVER_ID_2_GPIO_Port GPIOB
+#define ST_DRIVER_ID_1_Pin LL_GPIO_PIN_15
+#define ST_DRIVER_ID_1_GPIO_Port GPIOB
+#define TRACK_GREEN_Pin LL_GPIO_PIN_7
+#define TRACK_GREEN_GPIO_Port GPIOB
+#define TRACK_DATA_IN_Pin LL_GPIO_PIN_8
+#define TRACK_DATA_IN_GPIO_Port GPIOB
+#define TRACK_RED_Pin LL_GPIO_PIN_9
+#define TRACK_RED_GPIO_Port GPIOB
 #ifndef NVIC_PRIORITYGROUP_0
 #define NVIC_PRIORITYGROUP_0         ((uint32_t)0x00000007) /*!< 0 bit  for pre-emption priority,
                                                                  4 bits for subpriority */
