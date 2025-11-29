@@ -300,6 +300,18 @@ void TIM3_IRQHandler(void)
 		if (ptr_sptr_exit_lane_1){
 			ptr_sptr_exit_lane_1(capture);
 		}
+	} else if (LL_TIM_IsActiveFlag_CC3(TIM3)){
+		uint16_t capture = LL_TIM_IC_GetCaptureCH3(TIM3);
+		LL_TIM_ClearFlag_CC3(TIM3);
+		if (ptr_sptr_entry_lane_2){
+			ptr_sptr_entry_lane_2(capture);
+		}
+	} else if (LL_TIM_IsActiveFlag_CC4(TIM4)){
+		uint16_t capture = LL_TIM_IC_GetCaptureCH4(TIM3);
+		LL_TIM_ClearFlag_CC4(TIM3);
+		if (ptr_sptr_exit_lane_2){
+			ptr_sptr_exit_lane_2(capture);
+		}
 	} else if (LL_TIM_IsActiveFlag_UPDATE(TIM3)){
 		LL_TIM_ClearFlag_UPDATE(TIM3);
 		tim3_update_caps++;

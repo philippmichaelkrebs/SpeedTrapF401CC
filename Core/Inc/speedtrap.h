@@ -35,16 +35,24 @@
 
 #include "stm32f4xx.h"
 
-#define SPTR_DRIVER		6U
-#define SPTR_GATES		4U
-#define SPTR_BASES		3U
-#define SPTR_DISTANCE	200U // in mm
+#define SPTR_DRIVER				6U
+#define SPTR_GATES				4U
+#define SPTR_BASES				3U
+#define SPTR_DISTANCE			200U // in mm
+#define SPTR_SENSITIVITY_OFFSET	558U
+
+typedef enum {
+	SPTR_MODE_FASTER,
+	SPTR_MODE_SLOWER,
+} SPTR_MODE;
 
 typedef struct {
 	uint8_t 	id;
 	uint8_t 	in_section;
 	uint16_t	time_entry_hires;
 	uint16_t	time_entry_lores;
+	uint16_t	ticks;
+	uint16_t	trigger;
 } vehicle;
 
 typedef struct {
@@ -57,7 +65,9 @@ typedef struct {
 void 	sptr_init(void);
 void 	sptr_set_trigger_sensitivity(uint16_t value);
 uint8_t sptr_triggered(void);
-uint8_t sptr_flash_active(uint16_t hundredth);
+void	sptr_update(void);
+uint8_t sptr_vehicle_reaches_threshold(uint16_t);
+void 	sptr_set_mode(SPTR_MODE);
 void 	sptr_isr_entry_identification_lane_1(uint16_t capture);
 void	sptr_isr_exit_identification_lane_1(uint16_t capture);
 void 	sptr_isr_entry_identification_lane_2(uint16_t capture);
