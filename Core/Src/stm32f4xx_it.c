@@ -252,12 +252,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 	if (LL_TIM_IsActiveFlag_UPDATE(TIM10)){
 		LL_TIM_ClearFlag_UPDATE(TIM10);
-		LL_GPIO_TogglePin(OUTPUT_HUNDREDTH_TEST_GPIO_Port, OUTPUT_HUNDREDTH_TEST_Pin);
+		//LL_GPIO_TogglePin(OUTPUT_HUNDREDTH_TEST_GPIO_Port, OUTPUT_HUNDREDTH_TEST_Pin);
 		hundredth++;
 		tenth_counter++;
 		if (10 <= tenth_counter){
 			tenth_counter = 0;
-			LL_GPIO_TogglePin(LED_ONBOARD_GPIO_Port, LED_ONBOARD_Pin);
+			LL_GPIO_TogglePin(TRACK_TICKS_IND_LED_GPIO_Port, TRACK_TICKS_IND_LED_Pin);
 		}
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
@@ -306,7 +306,7 @@ void TIM3_IRQHandler(void)
 		if (ptr_sptr_entry_lane_2){
 			ptr_sptr_entry_lane_2(capture);
 		}
-	} else if (LL_TIM_IsActiveFlag_CC4(TIM4)){
+	} else if (LL_TIM_IsActiveFlag_CC4(TIM3)){
 		uint16_t capture = LL_TIM_IC_GetCaptureCH4(TIM3);
 		LL_TIM_ClearFlag_CC4(TIM3);
 		if (ptr_sptr_exit_lane_2){

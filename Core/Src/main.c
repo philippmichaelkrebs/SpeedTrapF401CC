@@ -402,6 +402,10 @@ static void MX_TIM3_Init(void)
   LL_TIM_EnableIT_CC1(TIM3);
   LL_TIM_CC_EnableChannel(TIM3, LL_TIM_CHANNEL_CH2);
   LL_TIM_EnableIT_CC2(TIM3);
+  LL_TIM_CC_EnableChannel(TIM3, LL_TIM_CHANNEL_CH3);
+  LL_TIM_EnableIT_CC3(TIM3);
+  LL_TIM_CC_EnableChannel(TIM3, LL_TIM_CHANNEL_CH4);
+  LL_TIM_EnableIT_CC4(TIM3);
 
   // start timer
   LL_TIM_EnableCounter(TIM3);
@@ -770,7 +774,7 @@ static void MX_GPIO_Init(void)
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOB);
 
   /**/
-  LL_GPIO_ResetOutputPin(TRACK_TICKS_BI_LED_GPIO_Port, TRACK_TICKS_BI_LED_Pin);
+  LL_GPIO_ResetOutputPin(TRACK_TICKS_IND_LED_GPIO_Port, TRACK_TICKS_IND_LED_Pin);
 
   /**/
   LL_GPIO_ResetOutputPin(ST_TRIGGER_GPIO_Port, ST_TRIGGER_Pin);
@@ -780,12 +784,12 @@ static void MX_GPIO_Init(void)
                           |ST_DRIVER_ID_2_Pin|ST_DRIVER_ID_1_Pin|TRACK_GREEN_Pin);
 
   /**/
-  GPIO_InitStruct.Pin = TRACK_TICKS_BI_LED_Pin;
+  GPIO_InitStruct.Pin = TRACK_TICKS_IND_LED_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(TRACK_TICKS_BI_LED_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(TRACK_TICKS_IND_LED_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = ST_TRIGGER_Pin;

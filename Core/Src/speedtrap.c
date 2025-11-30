@@ -54,13 +54,13 @@ uint8_t sptr_triggered(void){
 }
 
 uint8_t sptr_vehicle_reaches_threshold(uint8_t driver){
-	if (sptr_mdoe == SPTR_MODE_FASTER){
+	/*if (sptr_mdoe == SPTR_MODE_FASTER){
 		if (sptr_vehicles[driver] > sptr_trigger_sensitivity)
 			return 1;
 	} else {
 		if (sptr_vehicles[driver] < sptr_trigger_sensitivity)
 			return 1;
-	}
+	}*/
 	return 0;
 }
 
@@ -79,9 +79,9 @@ void sptr_update(void){
 	for (uint8_t drivers = 0; drivers < 6; drivers++){
 		if (sptr_vehicles[drivers].trigger){
 			sptr_vehicles[drivers].trigger = 0;
-			if (sptr_vehicle_reaches_threshold(drivers))
+			//if (sptr_vehicle_reaches_threshold(drivers))
 
-				LL_TIM_SetOnePulseMode(TIMx, OnePulseMode)
+				//LL_TIM_SetOnePulseMode(TIMx, OnePulseMode)
 		}
 	}
 }

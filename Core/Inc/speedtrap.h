@@ -66,7 +66,7 @@ void 	sptr_init(void);
 void 	sptr_set_trigger_sensitivity(uint16_t value);
 uint8_t sptr_triggered(void);
 void	sptr_update(void);
-uint8_t sptr_vehicle_reaches_threshold(uint16_t);
+uint8_t sptr_vehicle_reaches_threshold(uint8_t driver);
 void 	sptr_set_mode(SPTR_MODE);
 void 	sptr_isr_entry_identification_lane_1(uint16_t capture);
 void	sptr_isr_exit_identification_lane_1(uint16_t capture);

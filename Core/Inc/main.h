@@ -72,8 +72,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define TRACK_TICKS_BI_LED_Pin LL_GPIO_PIN_13
-#define TRACK_TICKS_BI_LED_GPIO_Port GPIOC
+#define TRACK_TICKS_IND_LED_Pin LL_GPIO_PIN_13
+#define TRACK_TICKS_IND_LED_GPIO_Port GPIOC
 #define WS2812B_CHAN1_Pin LL_GPIO_PIN_0
 #define WS2812B_CHAN1_GPIO_Port GPIOA
 #define WS2812B_CHAN2_Pin LL_GPIO_PIN_1
