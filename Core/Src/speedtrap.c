@@ -24,8 +24,12 @@ void sptr_init(void){
 		vehic->in_section = 0;
 		vehic->time_entry_hires = 0;
 		vehic->time_entry_lores = 0;
+		vehic->time_exit_hires = 0;
+		vehic->time_exit_lores = 0;
 		vehic->trigger = 0;
 		vehic->in_section = 0;
+		vehic->time_hires_diff = 0;
+		vehic->time_lores_diff = 0;
 	}
 
 	for (uint8_t gate = 0; gate < SPTR_GATES; gate++){
@@ -219,13 +223,39 @@ void sptr_isr_exit_identification_lane_1(uint16_t capture){
 		// calculate outgoing car
 
 		uint16_t id = ((diff1 + 4) >> 3) - 1;
+		/*
+				uint16_t id = ((diff1 + 4) >> 3) - 1;
+				if (id < 6){
+					if ((sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) < 2){
+						uint16_t hires_diff = capture - sptr_vehicles[id].time_entry_hires;
+						sptr_vehicles[id].in_section = 0;
+						sptr_vehicles[id].ticks = hires_diff >> 3;
+						sptr_vehicles[id].trigger = 1;
+					}
+				}*/
+
+		// experimental
+		// this allows the car to pass the gates in 4194308 us (4.194308s)
+		// that is 0.035762786865234375 m/s or ~0.128 km/h
 		if (id < 6){
-			if ((sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) < 2){
-				uint16_t hires_diff = capture - sptr_vehicles[id].time_entry_hires;
-				sptr_vehicles[id].in_section = 0;
-				sptr_vehicles[id].ticks = hires_diff >> 3;
-				sptr_vehicles[id].trigger = 1;
+			vehicle *vehic = &sptr_vehicles[id];
+			if (!vehic->in_section)
+				return;
+			uint16_t hires_diff = (capture - vehic->time_entry_hires);
+			uint16_t lores_diff = 0;
+			if ((sptr_timer_low_res - vehic->time_entry_lores) > 0){
+				if (capture > vehic->time_entry_hires)
+					lores_diff = (sptr_timer_low_res - vehic->time_entry_lores) << 13; // value << (16-3)
+				else
+					lores_diff = (sptr_timer_low_res - vehic->time_entry_lores - 1) << 13; // value << (16-3)
 			}
+			vehic->in_section = 0;
+			vehic->ticks = (hires_diff>>3)+lores_diff;
+			vehic->trigger = 1;
+			vehic->time_exit_hires = gate->captures[0];
+			vehic->time_exit_lores = sptr_timer_low_res;
+			vehic->time_hires_diff = hires_diff;
+			vehic->time_lores_diff = lores_diff;
 		}
 	}
 }
@@ -360,8 +390,8 @@ void sptr_isr_exit_identification_lane_2(uint16_t capture){
 		}
 
 		// calculate outgoing car
-		/*
 		uint16_t id = ((diff1 + 4) >> 3) - 1;
+		/*
 		if (id < 6){
 			if ((sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) < 2){
 				uint16_t hires_diff = capture - sptr_vehicles[id].time_entry_hires;

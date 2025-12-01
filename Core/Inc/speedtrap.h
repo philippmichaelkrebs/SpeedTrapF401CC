@@ -51,6 +51,10 @@ typedef struct {
 	uint8_t 	in_section;
 	uint16_t	time_entry_hires;
 	uint16_t	time_entry_lores;
+	uint16_t	time_exit_lores;
+	uint16_t	time_exit_hires;
+	uint16_t	time_hires_diff;
+	uint16_t	time_lores_diff;
 	uint16_t	ticks;
 	uint16_t	trigger;
 } vehicle;
