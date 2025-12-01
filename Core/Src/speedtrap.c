@@ -293,7 +293,7 @@ void sptr_isr_entry_identification_lane_2(uint16_t capture){
 		uint16_t id = ((diff1 + 4) >> 3) - 1;
 		if (id < 6){
 			sptr_vehicles[id].in_section = 1;
-			sptr_vehicles[id].time_entry_hires = capture; // todo: time in ms
+			sptr_vehicles[id].time_entry_hires = capture;
 			sptr_vehicles[id].time_entry_lores = sptr_timer_low_res;
 			sptr_vehicles[id].trigger = 0;
 			sptr_vehicles[id].ticks = 0;
@@ -360,7 +360,7 @@ void sptr_isr_exit_identification_lane_2(uint16_t capture){
 		}
 
 		// calculate outgoing car
-
+		/*
 		uint16_t id = ((diff1 + 4) >> 3) - 1;
 		if (id < 6){
 			if ((sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) < 2){
@@ -369,6 +369,22 @@ void sptr_isr_exit_identification_lane_2(uint16_t capture){
 				sptr_vehicles[id].ticks = hires_diff >> 3;
 				sptr_vehicles[id].trigger = 1;
 			}
+		}*/
+
+		// experimental
+		// this allows the car to pass the gates in 4194308 us (4.194308s)
+		// that is 0.035762786865234375 m/s or ~0.128 km/h
+		if (id < 6){
+			uint16_t hires_diff = (capture - sptr_vehicles[id].time_entry_hires)>>3;
+			if ((sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) > 0){
+				if (capture > sptr_vehicles[id].time_entry_hires)
+					hires_diff += (sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) << 13; // value << (16-3)
+				else
+					hires_diff += (sptr_timer_low_res - sptr_vehicles[id].time_entry_lores - 1) << 13; // value << (16-3)
+			}
+			sptr_vehicles[id].in_section = 0;
+			sptr_vehicles[id].ticks = hires_diff;
+			sptr_vehicles[id].trigger = 1;
 		}
 	}
 }
