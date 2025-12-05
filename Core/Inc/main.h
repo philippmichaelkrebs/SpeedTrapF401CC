@@ -78,8 +78,6 @@ void Error_Handler(void);
 #define WS2812B_CHAN1_GPIO_Port GPIOA
 #define WS2812B_CHAN2_Pin LL_GPIO_PIN_1
 #define WS2812B_CHAN2_GPIO_Port GPIOA
-#define ST_TRIGGER_Pin LL_GPIO_PIN_5
-#define ST_TRIGGER_GPIO_Port GPIOA
 #define ST_DRIVER_ID_6_Pin LL_GPIO_PIN_2
 #define ST_DRIVER_ID_6_GPIO_Port GPIOB
 #define ST_DRIVER_ID_5_Pin LL_GPIO_PIN_10

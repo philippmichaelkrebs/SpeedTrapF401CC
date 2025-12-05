@@ -8,13 +8,13 @@
 
 # include "speedtrap.h"
 
-static vehicle 		sptr_vehicles [SPTR_DRIVER];
-static segment_gate sptr_gates [SPTR_GATES];		// 0 and 1 for left lane, 2 and 3 for right lane
-static uint16_t 	sptr_timer_low_res;
-static uint16_t		sptr_trigger_sensitivity;
-static	uint8_t		sptr_trigger_local = 0;
-static uint16_t		sptr_flash_active_flag = 0;
-static uint16_t		sptr_flash_active_time = 0;
+static volatile vehicle 		sptr_vehicles [SPTR_DRIVER];
+static volatile segment_gate 	sptr_gates [SPTR_GATES];		// 0 and 1 for left lane, 2 and 3 for right lane
+static volatile uint16_t 		sptr_timer_low_res;
+static 			uint16_t		sptr_trigger_sensitivity;
+static			uint8_t			sptr_trigger_local = 0;
+//static 			uint16_t		sptr_flash_active_flag = 0;
+//static 			uint16_t		sptr_flash_active_time = 0;
 SPTR_MODE 			sptr_mode = SPTR_MODE_FASTER;
 
 void sptr_init(void){
@@ -58,17 +58,22 @@ uint8_t sptr_triggered(void){
 }
 
 uint8_t sptr_vehicle_reaches_threshold(uint8_t driver){
-	/*if (sptr_mdoe == SPTR_MODE_FASTER){
-		if (sptr_vehicles[driver] > sptr_trigger_sensitivity)
+	if (SPTR_MODE_OFF == sptr_mode)
+		return 0;
+
+	if (sptr_mode == SPTR_MODE_FASTER){
+		if (sptr_vehicles[driver].ticks > sptr_trigger_sensitivity)
 			return 1;
 	} else {
-		if (sptr_vehicles[driver] < sptr_trigger_sensitivity)
+		if (sptr_vehicles[driver].ticks < sptr_trigger_sensitivity)
 			return 1;
-	}*/
+	}
 	return 0;
 }
 
 void sptr_trigger_flash(void){
+	if (!LL_TIM_IsActiveFlag_UPDATE(TIM2))
+		return;
 	LL_TIM_SetCounter(TIM2, 0);
 	LL_TIM_ClearFlag_UPDATE(TIM2);
 	LL_TIM_EnableCounter(TIM2);
@@ -83,15 +88,25 @@ void sptr_update(void){
 	for (uint8_t drivers = 0; drivers < 6; drivers++){
 		if (sptr_vehicles[drivers].trigger){
 			sptr_vehicles[drivers].trigger = 0;
-			//if (sptr_vehicle_reaches_threshold(drivers))
-
-				//LL_TIM_SetOnePulseMode(TIMx, OnePulseMode)
+			if (sptr_vehicle_reaches_threshold(drivers))
+				sptr_trigger_flash();
 		}
 	}
 }
 
+
+/*
+ *
+ *
+ *
+ * ISR ISR ISR
+ *
+ *
+ *
+ */
+
 void sptr_isr_entry_identification_lane_1(uint16_t capture){
-	segment_gate *gate = &sptr_gates[1];
+	volatile segment_gate *gate = &sptr_gates[1];
 
 	if (gate->pointer < SPTR_BASES){
 		/*
@@ -153,7 +168,7 @@ void sptr_isr_entry_identification_lane_1(uint16_t capture){
 		uint16_t id = ((diff1 + 4) >> 3) - 1;
 		if (id < 6){
 			sptr_vehicles[id].in_section = 1;
-			sptr_vehicles[id].time_entry_hires = capture; // todo: time in ms
+			sptr_vehicles[id].time_entry_hires = capture;
 			sptr_vehicles[id].time_entry_lores = sptr_timer_low_res;
 			sptr_vehicles[id].trigger = 0;
 			sptr_vehicles[id].ticks = 0;
@@ -162,7 +177,7 @@ void sptr_isr_entry_identification_lane_1(uint16_t capture){
 }
 
 void sptr_isr_exit_identification_lane_1(uint16_t capture){
-	segment_gate *gate = &sptr_gates[0];
+	volatile segment_gate *gate = &sptr_gates[0];
 
 	if (gate->pointer < SPTR_BASES){
 		if ((sptr_timer_low_res > (gate->reset_timer + 1)) ||
@@ -238,7 +253,7 @@ void sptr_isr_exit_identification_lane_1(uint16_t capture){
 		// this allows the car to pass the gates in 4194308 us (4.194308s)
 		// that is 0.035762786865234375 m/s or ~0.128 km/h
 		if (id < 6){
-			vehicle *vehic = &sptr_vehicles[id];
+			volatile vehicle *vehic = &sptr_vehicles[id];
 			if (!vehic->in_section)
 				return;
 			uint16_t hires_diff = (capture - vehic->time_entry_hires);
@@ -261,7 +276,7 @@ void sptr_isr_exit_identification_lane_1(uint16_t capture){
 }
 
 void sptr_isr_entry_identification_lane_2(uint16_t capture){
-	segment_gate *gate = &sptr_gates[3];
+	volatile segment_gate *gate = &sptr_gates[3];
 
 	if (gate->pointer < SPTR_BASES){
 		/*
@@ -331,7 +346,7 @@ void sptr_isr_entry_identification_lane_2(uint16_t capture){
 	}
 }
 void sptr_isr_exit_identification_lane_2(uint16_t capture){
-	segment_gate *gate = &sptr_gates[2];
+	volatile segment_gate *gate = &sptr_gates[2];
 
 	if (gate->pointer < SPTR_BASES){
 		if ((sptr_timer_low_res > (gate->reset_timer + 1)) ||
@@ -341,7 +356,7 @@ void sptr_isr_exit_identification_lane_2(uint16_t capture){
 			gate->pointer = SPTR_BASES + 1; // redirect to reset because of mismeasurement
 		} else {
 			// regular measurement
-			gate->captures[gate->pointer] = capture; // todo: vulnerable use of pointer - potential failure
+			gate->captures[gate->pointer] = capture;
 			gate->last_capture = capture;
 			gate->pointer++;
 		}
@@ -405,16 +420,24 @@ void sptr_isr_exit_identification_lane_2(uint16_t capture){
 		// this allows the car to pass the gates in 4194308 us (4.194308s)
 		// that is 0.035762786865234375 m/s or ~0.128 km/h
 		if (id < 6){
-			uint16_t hires_diff = (capture - sptr_vehicles[id].time_entry_hires)>>3;
-			if ((sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) > 0){
-				if (capture > sptr_vehicles[id].time_entry_hires)
-					hires_diff += (sptr_timer_low_res - sptr_vehicles[id].time_entry_lores) << 13; // value << (16-3)
+			volatile vehicle *vehic = &sptr_vehicles[id]; // pointer to car
+			if (!vehic->in_section) // if not in section return unprocessed
+				return;
+			uint16_t hires_diff = (capture - vehic->time_entry_hires);	// difference of fast ticks
+			uint16_t lores_diff = 0;									// difference of overflow counter
+			if ((sptr_timer_low_res - vehic->time_entry_lores) > 0){	// if overflow counter add to diff
+				if (capture > vehic->time_entry_hires)
+					lores_diff = (sptr_timer_low_res - vehic->time_entry_lores) << 13; // value << (16-3)
 				else
-					hires_diff += (sptr_timer_low_res - sptr_vehicles[id].time_entry_lores - 1) << 13; // value << (16-3)
+					lores_diff = (sptr_timer_low_res - vehic->time_entry_lores - 1) << 13; // value << (16-3)
 			}
-			sptr_vehicles[id].in_section = 0;
-			sptr_vehicles[id].ticks = hires_diff;
-			sptr_vehicles[id].trigger = 1;
+			vehic->in_section = 0;
+			vehic->ticks = (hires_diff>>3)+lores_diff;
+			vehic->trigger = 1;
+			vehic->time_exit_hires = gate->captures[0];
+			vehic->time_exit_lores = sptr_timer_low_res;
+			vehic->time_hires_diff = hires_diff;
+			vehic->time_lores_diff = lores_diff;
 		}
 	}
 }

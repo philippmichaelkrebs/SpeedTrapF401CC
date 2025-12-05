@@ -34,14 +34,15 @@
 #define INC_SPEEDTRAP_H_
 
 #include "stm32f4xx.h"
+#include "stm32f4xx_ll_tim.h"
 
 #define SPTR_DRIVER				6U
 #define SPTR_GATES				4U
 #define SPTR_BASES				3U
-#define SPTR_DISTANCE			200U // in mm
-#define SPTR_SENSITIVITY_OFFSET	558U
+#define SPTR_SENSITIVITY_OFFSET	550U
 
 typedef enum {
+	SPTR_MODE_OFF,
 	SPTR_MODE_FASTER,
 	SPTR_MODE_SLOWER,
 } SPTR_MODE;

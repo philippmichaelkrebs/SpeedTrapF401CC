@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
+#include "usart.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -41,8 +42,17 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-extern uint32_t hundredth;
-uint32_t tenth_counter = 0;
+extern 	uint32_t 	hundredth;
+extern 	uint32_t 	tenth_counter;
+		uint32_t 	sec_counter = 0;
+extern	uint32_t 	seconds;
+
+
+extern 	volatile uint8_t	uart_rx_buffer[UART_RX_BUF_LEN];
+extern 	volatile uint8_t	uart_rx_buffer_copy[UART_RX_BUF_LEN];
+extern	volatile uint8_t	uart_rx_buffer_processed_flag;
+extern 	volatile uint8_t	uart_rx_buffer_processed_flag;
+extern 	volatile uint8_t	uart_tx_transfer_completed;
 
 uint16_t caps1 [8] = {0};
 uint8_t caps1_index = 0;
@@ -255,9 +265,16 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		//LL_GPIO_TogglePin(OUTPUT_HUNDREDTH_TEST_GPIO_Port, OUTPUT_HUNDREDTH_TEST_Pin);
 		hundredth++;
 		tenth_counter++;
+		sec_counter++;
+
 		if (10 <= tenth_counter){
 			tenth_counter = 0;
 			LL_GPIO_TogglePin(TRACK_TICKS_IND_LED_GPIO_Port, TRACK_TICKS_IND_LED_Pin);
+		}
+
+		if (100 < sec_counter){
+			sec_counter = 0;
+			seconds++;
 		}
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
@@ -342,6 +359,45 @@ void DMA1_Stream7_IRQHandler(void)
 			}
 		}
   /* USER CODE END DMA1_Stream7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 stream2 global interrupt.
+  */
+void DMA2_Stream2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream2_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream2_IRQn 0 */
+  /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
+
+	// RX RX RX RX RX RX
+	if (LL_DMA_IsActiveFlag_TC2(DMA2)){
+		LL_DMA_ClearFlag_TC2(DMA2);
+		if (uart_rx_buffer_processed_flag){
+			for (uint8_t idx_rx = 0; idx_rx < UART_RX_BUF_LEN; idx_rx++)
+				uart_rx_buffer_copy[idx_rx] = uart_rx_buffer[idx_rx];
+			uart_rx_buffer_processed_flag = 0;
+		}
+	}
+
+  /* USER CODE END DMA2_Stream2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 stream7 global interrupt.
+  */
+void DMA2_Stream7_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream7_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream7_IRQn 0 */
+  /* USER CODE BEGIN DMA2_Stream7_IRQn 1 */
+	if (LL_DMA_IsActiveFlag_TC7(DMA2)){
+		LL_DMA_ClearFlag_TC7(DMA2);
+		uart_tx_transfer_completed = 1;
+	}
+  /* USER CODE END DMA2_Stream7_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
