@@ -13,9 +13,11 @@ static volatile segment_gate 	sptr_gates [SPTR_GATES];		// 0 and 1 for left lane
 static volatile uint16_t 		sptr_timer_low_res;
 static 			uint16_t		sptr_trigger_sensitivity;
 static			uint8_t			sptr_trigger_local = 0;
-//static 			uint16_t		sptr_flash_active_flag = 0;
-//static 			uint16_t		sptr_flash_active_time = 0;
-SPTR_MODE 			sptr_mode = SPTR_MODE_FASTER;
+//static 		uint16_t		sptr_flash_active_flag = 0;
+//static 		uint16_t		sptr_flash_active_time = 0;
+				SPTR_MODE 		sptr_mode = SPTR_MODE_FASTER;
+				uint16_t 		sptr_speeds[6] = {0};
+				uint8_t 		sptr_status = 1; // default on
 
 void sptr_init(void){
 	for (uint8_t driver = 0; driver < SPTR_DRIVER; driver++){
@@ -58,21 +60,21 @@ uint8_t sptr_triggered(void){
 }
 
 uint8_t sptr_vehicle_reaches_threshold(uint8_t driver){
-	if (SPTR_MODE_OFF == sptr_mode)
+	if (!sptr_status) // speed trap is off
 		return 0;
 
 	if (sptr_mode == SPTR_MODE_FASTER){
-		if (sptr_vehicles[driver].ticks > sptr_trigger_sensitivity)
+		if (sptr_vehicles[driver].ticks < sptr_trigger_sensitivity)
 			return 1;
 	} else {
-		if (sptr_vehicles[driver].ticks < sptr_trigger_sensitivity)
+		if (sptr_vehicles[driver].ticks > sptr_trigger_sensitivity)
 			return 1;
 	}
 	return 0;
 }
 
 void sptr_trigger_flash(void){
-	if (!LL_TIM_IsActiveFlag_UPDATE(TIM2))
+	if (!LL_TIM_IsActiveFlag_UPDATE(TIM2)) // still flashing
 		return;
 	LL_TIM_SetCounter(TIM2, 0);
 	LL_TIM_ClearFlag_UPDATE(TIM2);
@@ -80,20 +82,32 @@ void sptr_trigger_flash(void){
 
 }
 
-void sptr_set_mode(SPTR_MODE mode){
-	sptr_mode = mode;
-}
 
 void sptr_update(void){
 	for (uint8_t drivers = 0; drivers < 6; drivers++){
 		if (sptr_vehicles[drivers].trigger){
 			sptr_vehicles[drivers].trigger = 0;
+			sptr_speeds[drivers] = sptr_vehicles[drivers].ticks;
 			if (sptr_vehicle_reaches_threshold(drivers))
 				sptr_trigger_flash();
 		}
 	}
 }
 
+void sptr_set_mode(SPTR_MODE mode){
+	if (mode != sptr_mode)
+		sptr_mode = mode;
+}
+
+void sptr_set_status(uint8_t status){
+	if (status != sptr_status)
+		sptr_status = status;
+}
+
+void sptr_reset(){
+	for (uint16_t id = 0; id < 6; id++)
+		sptr_speeds[id] = 0;
+}
 
 /*
  *

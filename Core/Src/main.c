@@ -58,6 +58,7 @@ volatile uint8_t	uart_rx_buffer_processed_flag = 1;
 volatile uint8_t	uart_tx_transfer_completed		= 1;
 
 USART_BASE_DATA 	uart_base = {0};
+USART_DISPLAY_DATA 	uart_display = {0};
 
 /* USER CODE END PV */
 
@@ -174,47 +175,77 @@ int main(void)
 	  update_race_info_status();
 	  sptr_update();
 
-	  if (seconds_flag != seconds){
-		  seconds_flag = seconds;
 
-		  uint8_t buffer_idx = 0;
-		  uart_tx_buffer[buffer_idx++] 	= 3;
-		  uart_tx_buffer[buffer_idx++] 	= 0;
-		  uart_tx_buffer[buffer_idx++] 	= 4;
-		  uart_tx_buffer[buffer_idx++] 	= 0;
-		  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF000000 & seconds) >> 24);
-		  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF0000 & seconds) >> 16);
-		  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x0000FF00 & seconds) >> 8);
-		  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x000000FF & seconds));
-		  uart_tx_buffer[buffer_idx++] 	= 1;
-		  uart_tx_buffer[buffer_idx++] 	= 1;
-		  uart_tx_buffer[buffer_idx++]	= 1;
-		  uart_tx_buffer[buffer_idx++] 	= 123;
-
-		  //uart_tx_buffer[0] = (uint8_t)seconds;
-		  UART_DMA_TX();
-	  }
-
-
-
+	  // new RX data available in the buffer
 	  if (!uart_rx_buffer_processed_flag){
-		  uart_base.race_state 		= uart_rx_buffer_copy[0];
-		  uart_base.start_lights 	= uart_rx_buffer_copy[1];
-		  uart_base.jump_start_id 	= uart_rx_buffer_copy[2];
-		  uart_base.pause 			= uart_rx_buffer_copy[3];
-		  uart_base.track_ticks		= (0x000000FF & uart_rx_buffer_copy[4]) << 24;
-		  uart_base.track_ticks		|= (0x000000FF & uart_rx_buffer_copy[5]) << 16;
-		  uart_base.track_ticks		|= (0x000000FF & uart_rx_buffer_copy[6]) << 8;
-		  uart_base.track_ticks		|= (0x000000FF & uart_rx_buffer_copy[7]);
-		  uart_base.speed_trap_on 	= uart_rx_buffer_copy[8];
-		  uart_base.speed_scaled 	= uart_rx_buffer_copy[9];
-		  uart_base.speed_24 		= uart_rx_buffer_copy[10];
-		  uart_base.speed_trap_sensitivity 	= uart_rx_buffer_copy[11];
+		  uart_base.race_state 			= (uart_rx_buffer_copy[0] & 0x7F);
+		  uart_base.start_lights 		= uart_rx_buffer_copy[1];
+		  uart_base.jump_start_id 		= uart_rx_buffer_copy[2];
+		  uart_base.speed_trap_settings	= uart_rx_buffer_copy[3];
+		  uart_base.speed_trap_sensitivity 	= uart_rx_buffer_copy[4];
+		  uart_base.track_ticks			= (0x000000FF & uart_rx_buffer_copy[5]) << 24;
+		  uart_base.track_ticks			|= (0x000000FF & uart_rx_buffer_copy[6]) << 16;
+		  uart_base.track_ticks			|= (0x000000FF & uart_rx_buffer_copy[7]) << 8;
+		  uart_base.track_ticks			|= (0x000000FF & uart_rx_buffer_copy[8]);
 
 		  uart_rx_buffer_processed_flag = 1;
 
-		  // 	uart_tx_buffer[write_index++] = (0xFF00 & track_counter) >> 8;
-		  //	uart_tx_buffer[write_index++] = (0x00FF & track_counter);
+		  if (RACE_STATE_START_PROC == uart_base.race_state){
+			  sptr_reset();
+		  }
+
+		  sptr_set_mode(uart_base.speed_trap_settings & 0x02);		// faster/slower
+		  sptr_set_status(uart_base.speed_trap_settings & 0x01); 	// on/off
+
+		  // transmit to display
+		  if (uart_tx_transfer_completed){
+			  uart_display.race_state 		= uart_base.race_state;
+			  uart_display.start_lights		= uart_base.start_lights;
+			  uart_display.jump_start_id 	= uart_base.jump_start_id;
+			  uart_display.pause			= (uart_rx_buffer_copy[0] & 0x80);
+			  uart_display.track_ticks		= uart_base.track_ticks;
+		  }
+	  }
+
+
+	  // TX DRIVER DISPLAY - update frequency 1Hz
+	  if (seconds_flag != seconds){
+		  seconds_flag = seconds;
+
+		  if (uart_tx_transfer_completed){
+			  uart_display.speed_id0_ticks 	= sptr_speeds[0];
+			  uart_display.speed_id1_ticks 	= sptr_speeds[1];
+			  uart_display.speed_id2_ticks 	= sptr_speeds[2];
+			  uart_display.speed_id3_ticks 	= sptr_speeds[3];
+			  uart_display.speed_id4_ticks 	= sptr_speeds[4];
+			  uart_display.speed_id5_ticks 	= sptr_speeds[5];
+
+			  uint8_t buffer_idx = 0;
+			  uart_tx_buffer[buffer_idx++] 	= uart_display.race_state;
+			  uart_tx_buffer[buffer_idx++] 	= uart_display.start_lights;
+			  uart_tx_buffer[buffer_idx++] 	= uart_display.jump_start_id;
+			  uart_tx_buffer[buffer_idx++] 	= uart_display.pause;
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF000000 & uart_display.track_ticks) >> 24);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF0000 & uart_display.track_ticks) >> 16);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x0000FF00 & uart_display.track_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x000000FF & uart_display.track_ticks));
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF00 & uart_display.speed_id0_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF & uart_display.speed_id0_ticks));
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF00 & uart_display.speed_id1_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF & uart_display.speed_id1_ticks));
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF00 & uart_display.speed_id2_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF & uart_display.speed_id2_ticks));
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF00 & uart_display.speed_id3_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF & uart_display.speed_id3_ticks));
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF00 & uart_display.speed_id4_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF & uart_display.speed_id4_ticks));
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0xFF00 & uart_display.speed_id5_ticks) >> 8);
+			  uart_tx_buffer[buffer_idx++]	= (uint8_t)((0x00FF & uart_display.speed_id5_ticks));
+
+			  //uart_tx_buffer[0] = (uint8_t)seconds;
+			  UART_DMA_TX();
+		  }
+
 	  }
   }
   /* USER CODE END 3 */

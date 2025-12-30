@@ -42,7 +42,6 @@
 #define SPTR_SENSITIVITY_OFFSET	550U
 
 typedef enum {
-	SPTR_MODE_OFF,
 	SPTR_MODE_FASTER,
 	SPTR_MODE_SLOWER,
 } SPTR_MODE;
@@ -67,12 +66,17 @@ typedef struct {
 	uint16_t	last_capture;
 } segment_gate;
 
+extern 	uint16_t 	sptr_speeds[6];
+extern 	uint8_t 	sptr_status;
+
 void 	sptr_init(void);
 void 	sptr_set_trigger_sensitivity(uint16_t value);
 uint8_t sptr_triggered(void);
 void	sptr_update(void);
 uint8_t sptr_vehicle_reaches_threshold(uint8_t driver);
 void 	sptr_set_mode(SPTR_MODE);
+void 	sptr_set_status(uint8_t status);
+void	sptr_reset(void);
 void 	sptr_isr_entry_identification_lane_1(uint16_t capture);
 void	sptr_isr_exit_identification_lane_1(uint16_t capture);
 void 	sptr_isr_entry_identification_lane_2(uint16_t capture);
